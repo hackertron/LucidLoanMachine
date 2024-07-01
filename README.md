@@ -7,3 +7,9 @@ Lucid Loand Machine(LLM) : LLM and zk powered loan app
 3. zkemail
 
 ## architecture
+
+
+### notes
+use raw email and make zkemail skill
+which is basically RSA but formatted for email check DKIM
+check if pdf if signed or not

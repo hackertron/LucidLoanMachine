@@ -9,7 +9,7 @@ def extract_text_from_pdf(pdf_file):
             text += reader.pages[page].extract_text()
         return text
 
-text = extract_text_from_pdf("bank-statement.pdf")
+text = extract_text_from_pdf("bank-statement-1.pdf")
 print("text : ", text)
 
 # below does not work

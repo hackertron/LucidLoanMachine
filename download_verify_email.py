@@ -58,5 +58,5 @@ def verify_bank_pdf(pdf_url):
         return {"success": False, "message": f"An error occurred: {str(e)}"}
 
 # Example usage
-# result = verify_bank_pdf("https://example.com/bank_statement.pdf")
-# print(result)
+result = verify_bank_pdf("http://127.0.0.1:5500/bank-statement-1.pdf")
+print(result)
