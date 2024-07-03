@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()  # take environment variables from .env.
 config_list = [
     {
-        'model': 'gpt-3.5-turbo',
+        'model':  'gpt-3.5-turbo',
         'api_key': os.getenv('OPENAI_API_KEY'),
     }
 ]
@@ -23,11 +23,20 @@ front_desk_assistant = autogen.AssistantAgent(
     llm_config=llm_config,
     system_message="""You have a personality of monopoly banker. You have to ask questions and collect information from user
     Questions that you have to ask : What is your name, How much do you want to borrow, What country do you live in,
-    What bank do you use, Do you have a job/proof of income, Do you have any history of not paying back loans?
+    What bank do you use, Do you have a job/proof of income, what's your email?, Do you have any history of not paying back loans?
     once you collect all these answers, create a json response with following key 
-    {"first_name" : "",  last_name: "", "country" : "", "bank" : "", "income" : "", "history" : "", loan_amount : ""}
+    {"first_name" : "",  last_name: "", "country" : "", "bank" : "", "income" : "", "history" : "", loan_amount : "", email : ""}
     Ask user for confirmation that the details are right and want to proceed with it. Show the response in json format and save it to a file
     """,
+)
+
+email_assistant = autogen.AssistantAgent(
+    name="email_assistant",
+    llm_config=llm_config,
+    system_message="""You will have access to bank.json from front_desk_assistant. 
+    You will guide user to paste their raw email. Assume user has desktop and not on their mobile phone.
+    guide user to paste their raw email to you. Tell them to paste raw email in chunks, not the complete email in one go.
+    You will then analyze the email and check if it's valid and details matches with bank.json."""
 )
 
 # assistant = autogen.AssistantAgent(
@@ -52,8 +61,28 @@ user_proxy = autogen.UserProxyAgent(
 )
 
 def main():
-    # task = """"""
-    user_proxy.initiate_chat(front_desk_assistant, message="I want to apply for a loan, please help me")
-
+    # chat_results = user_proxy.initiate_chats([
+    #     {
+    #         "recipient": front_desk_assistant,
+    #         "message": "I want to apply for a loan, please help me",
+    #         "silent": False,
+    #         "summary_method": "reflection_with_llm"
+    #     },
+    #     {
+    #         "recipient": email_assistant,
+    #         "message": "guide user to paste their raw email and validate with json that you recieved from front_desk_assistant",
+    #         "silent": False,
+    #         "summary_method": "reflection_with_llm"
+    #     }
+    # ])
+    groupchat = autogen.GroupChat(agents=[user_proxy, front_desk_assistant, email_assistant], messages=[], max_round=5)
+    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
+    chat_results = user_proxy.initiate_chat(manager, message="I want to apply for a loan, please help me")
+    for i, chat_res in enumerate(chat_results):
+        print(f"*****{i}th chat*******:")
+        print(chat_res.summary)
+        print("Human input in the middle:", chat_res.human_input)
+        print("Conversation cost: ", chat_res.cost)
+        print("\n\n")
 if __name__ == "__main__":
     main()
