@@ -39,6 +39,13 @@ email_assistant = autogen.AssistantAgent(
     You will then analyze the email and check if it's valid and details matches with bank.json."""
 )
 
+salary_slip_assistant = autogen.AssistantAgent(
+    name="salary_slip_assistant",
+    llm_config=llm_config,
+    system_message="""You will ask user to upload a salary slip in pdf format. You will analyze it and gather following informations from the pdf.
+    account number, bank balance. the details should match with bank.json file. You will add additional keys in bank.json file and save it."""
+)
+
 # assistant = autogen.AssistantAgent(
 #     name="laon_assistant",
 #     llm_config=llm_config,
@@ -61,23 +68,29 @@ user_proxy = autogen.UserProxyAgent(
 )
 
 def main():
-    # chat_results = user_proxy.initiate_chats([
-    #     {
-    #         "recipient": front_desk_assistant,
-    #         "message": "I want to apply for a loan, please help me",
-    #         "silent": False,
-    #         "summary_method": "reflection_with_llm"
-    #     },
-    #     {
-    #         "recipient": email_assistant,
-    #         "message": "guide user to paste their raw email and validate with json that you recieved from front_desk_assistant",
-    #         "silent": False,
-    #         "summary_method": "reflection_with_llm"
-    #     }
-    # ])
-    groupchat = autogen.GroupChat(agents=[user_proxy, front_desk_assistant, email_assistant], messages=[], max_round=5)
-    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
-    chat_results = user_proxy.initiate_chat(manager, message="I want to apply for a loan, please help me")
+    chat_results = user_proxy.initiate_chats([
+        {
+            "recipient": front_desk_assistant,
+            "message": "I want to apply for a loan, please help me",
+            "silent": False,
+            "summary_method": "reflection_with_llm"
+        },
+        {
+            "recipient": email_assistant,
+            "message": "guide user to paste their raw email and validate with json that you recieved from front_desk_assistant",
+            "silent": False,
+            "summary_method": "reflection_with_llm"
+        },
+        {
+            "recipient": salary_slip_assistant,
+            "message": "guide user to upload a salary slip in pdf format",
+            "silent": False,
+            "summary_method": "reflection_with_llm"
+        }
+    ])
+    # groupchat = autogen.GroupChat(agents=[user_proxy, front_desk_assistant, email_assistant], messages=[], max_round=5)
+    # manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=llm_config)
+    # chat_results = user_proxy.initiate_chat(manager, message="I want to apply for a loan, please help me")
     for i, chat_res in enumerate(chat_results):
         print(f"*****{i}th chat*******:")
         print(chat_res.summary)
