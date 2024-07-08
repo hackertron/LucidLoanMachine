@@ -1,7 +1,8 @@
 import autogen
 import os
 from dotenv import load_dotenv
-
+from typing import Annotated
+import requests
 load_dotenv()  # take environment variables from .env.
 config_list = [
     {
@@ -17,6 +18,13 @@ llm_config = {
     "temperature": 0 #lower temperature more standard lesss creative response, higher is more creative
 
 }
+
+def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verify"]) -> Annotated[dict, "The response from the Prove Email API"] | None:
+    api_url = f"https://archive.prove.email/api/key?domain={domain}"
+    response = requests.get(api_url)
+    return response.json() if response.status_code == 200 else None
+
+
 
 front_desk_assistant = autogen.AssistantAgent(
     name="front_desk_assistant",
@@ -38,6 +46,8 @@ email_assistant = autogen.AssistantAgent(
     guide user to paste their raw email to you. Tell them to paste raw email in chunks, not the complete email in one go.
     You will then analyze the email and check if it's valid and details matches with bank.json."""
 )
+
+
 
 salary_slip_assistant = autogen.AssistantAgent(
     name="salary_slip_assistant",
@@ -67,7 +77,16 @@ user_proxy = autogen.UserProxyAgent(
     otherwise, reply CONTINUE, or the reason why the task is not solved yet."""
 )
 
+user_proxy.register_for_llm(name="verify_email", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
+user_proxy.register_for_execution(name="verify_email")(verify_email_with_prove_api)
+
 def main():
+    # Register the verify_email_with_prove_api function for the email_assistant
+    email_assistant.register_function(
+        function_map={
+            "verify_email_with_prove_api": verify_email_with_prove_api
+        }
+    )
     chat_results = user_proxy.initiate_chats([
         {
             "recipient": front_desk_assistant,
