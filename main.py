@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from typing import Annotated
 import requests
+from system_prompts import front_desk_assistant_prompt, email_assistant_prompt
 load_dotenv()  # take environment variables from .env.
 config_list = [
     {
@@ -22,6 +23,7 @@ llm_config = {
 def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verify"]) -> Annotated[dict, "The response from the Prove Email API"] | None:
     api_url = f"https://archive.prove.email/api/key?domain={domain}"
     response = requests.get(api_url)
+    print("response : ", response)
     return response.json() if response.status_code == 200 else None
 
 
@@ -29,22 +31,13 @@ def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verif
 front_desk_assistant = autogen.AssistantAgent(
     name="front_desk_assistant",
     llm_config=llm_config,
-    system_message="""You have a personality of monopoly banker. You have to ask questions and collect information from user
-    Questions that you have to ask : What is your name, How much do you want to borrow, What country do you live in,
-    What bank do you use, Do you have a job/proof of income, what's your email?, Do you have any history of not paying back loans?
-    once you collect all these answers, create a json response with following key 
-    {"first_name" : "",  last_name: "", "country" : "", "bank" : "", "income" : "", "history" : "", loan_amount : "", email : ""}
-    Ask user for confirmation that the details are right and want to proceed with it. Show the response in json format and save it to a file
-    """,
+    system_message=front_desk_assistant_prompt,
 )
 
 email_assistant = autogen.AssistantAgent(
     name="email_assistant",
     llm_config=llm_config,
-    system_message="""You will have access to bank.json from front_desk_assistant. 
-    You will guide user to paste their raw email. Assume user has desktop and not on their mobile phone.
-    guide user to paste their raw email to you. Tell them to paste raw email in chunks, not the complete email in one go.
-    You will then analyze the email and check if it's valid and details matches with bank.json."""
+    system_message=email_assistant_prompt
 )
 
 
@@ -77,8 +70,8 @@ user_proxy = autogen.UserProxyAgent(
     otherwise, reply CONTINUE, or the reason why the task is not solved yet."""
 )
 
-user_proxy.register_for_llm(name="verify_email", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
-user_proxy.register_for_execution(name="verify_email")(verify_email_with_prove_api)
+user_proxy.register_for_llm(name="verify_email_with_prove_api", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
+user_proxy.register_for_execution(name="verify_email_with_prove_api")(verify_email_with_prove_api)
 
 def main():
     # Register the verify_email_with_prove_api function for the email_assistant
