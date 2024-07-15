@@ -30,12 +30,6 @@ def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verif
     return response.json() if response.status_code == 200 else None
 
 
-def write_to_bank_file(data : Annotated[dict, "bank data that is provided by the user"]):
-    with open('bank.json', 'w') as outfile:
-        json.dump(data, outfile)
-
-
-
 front_desk_assistant = autogen.AssistantAgent(
     name="front_desk_assistant",
     llm_config=llm_config,
@@ -77,8 +71,6 @@ user_proxy = autogen.UserProxyAgent(
     otherwise, reply CONTINUE, or the reason why the task is not solved yet."""
 )
 
-user_proxy.register_for_llm(name="write_to_bank_file", description="write to bank file")(write_to_bank_file)
-user_proxy.register_for_execution("write_to_bank_file")(write_to_bank_file)
 
 user_proxy.register_for_llm(name="verify_email_with_prove_api", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
 user_proxy.register_for_execution(name="verify_email_with_prove_api")(verify_email_with_prove_api)
@@ -90,7 +82,8 @@ def main():
     # Register the verify_email_with_prove_api function for the email_assistant
     email_assistant.register_function(
         function_map={
-            "verify_email_with_prove_api": verify_email_with_prove_api
+            "verify_email_with_prove_api": verify_email_with_prove_api,
+            "process_pdf_from_url": process_pdf_from_url
         }
     )
     chat_results = user_proxy.initiate_chats([
