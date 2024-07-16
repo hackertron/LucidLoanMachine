@@ -54,7 +54,7 @@ def process_local_pdf(file_path: Annotated[str, "local pdf file path"], password
 
 # Usage examples
 # For a PDF from URL
-# pdf_url = "https://example.com/path/to/bank-statement-1.pdf"  # Replace with actual URL
+# pdf_url = "http://127.0.0.1:5500/bank-statement.pdf"  # Replace with actual URL
 # pdf_password = "your_password_here"  # Replace with actual password if needed
 # text_from_url = process_pdf_from_url(pdf_url, pdf_password)
 # print("Extracted text from URL:")

@@ -12,6 +12,13 @@ email_assistant_prompt = """You will have access to bank.json from front_desk_as
     guide user to paste their raw email to you. Tell them to paste raw email in chunks, not the complete email in one go.
     You will then analyze the email and check if it's valid and details matches with bank.json."""
 
-salary_slip_assistant_prompt = """You will ask user to upload a salary slip in pdf format and password for unlocking pdf(if pdf is password protected).
-    You will call process_pdf_from_url function and analyze it and gather following informations from the pdf.
-    account number, bank balance. the details should match with bank.json file. You will add additional keys in bank.json file and save it."""
+salary_slip_assistant_prompt = """
+You will ask the user to provide a URL for their salary slip in PDF format. 
+Once you receive the URL, use the process_pdf_from_url function to download and verify the PDF.
+The function will return the extracted text if the PDF is valid and signed.
+Analyze the extracted text to gather the following information from the PDF:
+account number, bank balance. 
+Ensure the details match with the bank.json file. 
+Add additional keys to the bank.json file and save it.
+If there are any errors in processing the PDF, inform the user and ask for a different PDF.
+"""

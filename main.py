@@ -101,7 +101,7 @@ def main():
         },
         {
             "recipient": salary_slip_assistant,
-            "message": "guide user to upload a salary slip in pdf format",
+            "message": "guide user to upload a salary slip in pdf format and call process_pdf_from_url function to verify the pdf",
             "silent": False,
             "summary_method": "reflection_with_llm"
         }
