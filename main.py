@@ -1,9 +1,12 @@
 import autogen
 import os
+import json
 from dotenv import load_dotenv
 from typing import Annotated
 import requests
-from system_prompts import front_desk_assistant_prompt, email_assistant_prompt
+from system_prompts import front_desk_assistant_prompt, email_assistant_prompt, salary_slip_assistant_prompt
+from extract_pdf_skill import process_pdf_from_url
+
 load_dotenv()  # take environment variables from .env.
 config_list = [
     {
@@ -27,7 +30,6 @@ def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verif
     return response.json() if response.status_code == 200 else None
 
 
-
 front_desk_assistant = autogen.AssistantAgent(
     name="front_desk_assistant",
     llm_config=llm_config,
@@ -45,8 +47,7 @@ email_assistant = autogen.AssistantAgent(
 salary_slip_assistant = autogen.AssistantAgent(
     name="salary_slip_assistant",
     llm_config=llm_config,
-    system_message="""You will ask user to upload a salary slip in pdf format. You will analyze it and gather following informations from the pdf.
-    account number, bank balance. the details should match with bank.json file. You will add additional keys in bank.json file and save it."""
+    system_message=salary_slip_assistant_prompt
 )
 
 # assistant = autogen.AssistantAgent(
@@ -70,14 +71,19 @@ user_proxy = autogen.UserProxyAgent(
     otherwise, reply CONTINUE, or the reason why the task is not solved yet."""
 )
 
+
 user_proxy.register_for_llm(name="verify_email_with_prove_api", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
 user_proxy.register_for_execution(name="verify_email_with_prove_api")(verify_email_with_prove_api)
+
+user_proxy.register_for_llm(name="process_pdf_from_url", description="process pdf from url using extract_pdf_skill")(process_pdf_from_url)
+user_proxy.register_for_execution(name="process_pdf_from_url")(process_pdf_from_url)
 
 def main():
     # Register the verify_email_with_prove_api function for the email_assistant
     email_assistant.register_function(
         function_map={
-            "verify_email_with_prove_api": verify_email_with_prove_api
+            "verify_email_with_prove_api": verify_email_with_prove_api,
+            "process_pdf_from_url": process_pdf_from_url
         }
     )
     chat_results = user_proxy.initiate_chats([
@@ -95,7 +101,7 @@ def main():
         },
         {
             "recipient": salary_slip_assistant,
-            "message": "guide user to upload a salary slip in pdf format",
+            "message": "guide user to upload a salary slip in pdf format and call process_pdf_from_url function to verify the pdf",
             "silent": False,
             "summary_method": "reflection_with_llm"
         }
