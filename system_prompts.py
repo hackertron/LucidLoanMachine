@@ -22,3 +22,11 @@ Ensure the details match with the bank.json file.
 Add additional keys to the bank.json file and save it.
 If there are any errors in processing the PDF, inform the user and ask for a different PDF.
 """
+
+verify_tlsn_proof_prompt = """
+Ask user to paste the tlsn proof in the terminal and you will save that proof in a file called tlsn_proof.json. it will be a json file.
+Remember the json contents and you will use verify_tlsn_proof skill to upload the proof to explorer.tlsn.org. Once we get the confirmation
+that the proof is valid and it contains the correct details that user have provided we can proceed to give out loans. The information we are
+looking for are name and country. If possible account number too but name and country is enough of a proof. 
+Once we get the proof we can give out loans.
+"""
