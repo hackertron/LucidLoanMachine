@@ -1,26 +1,15 @@
-import autogen
-import os
-import json
-from dotenv import load_dotenv
+from autogen import AssistantAgent, UserProxyAgent, config_list_from_json
 from typing import Annotated
 import requests
-from system_prompts import front_desk_assistant_prompt, email_assistant_prompt, salary_slip_assistant_prompt
-from extract_pdf_skill import process_pdf_from_url
+from system_prompts import front_desk_assistant_prompt, email_assistant_prompt, verify_tlsn_proof_prompt
 
-load_dotenv()  # take environment variables from .env.
-config_list = [
-    {
-        'model':  'gpt-3.5-turbo',
-        'api_key': os.getenv('OPENAI_API_KEY'),
-    }
-]
+
 
 llm_config = {
     "timeout": 120,
     "seed": 42, # for caching. once task is run it caches the response,
-    "config_list": config_list,
-    "temperature": 0 #lower temperature more standard lesss creative response, higher is more creative
-
+    "config_list": config_list_from_json(env_or_file="OAI_CONFIG_LIST.json"),
+    "temperature": 0
 }
 
 def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verify"]) -> Annotated[dict, "The response from the Prove Email API"] | None:
@@ -29,34 +18,31 @@ def verify_email_with_prove_api(domain :Annotated[str, "The domain name to verif
     print("response : ", response)
     return response.json() if response.status_code == 200 else None
 
-
-front_desk_assistant = autogen.AssistantAgent(
+front_desk_assistant = AssistantAgent(
     name="front_desk_assistant",
     llm_config=llm_config,
     system_message=front_desk_assistant_prompt,
 )
 
-email_assistant = autogen.AssistantAgent(
+email_assistant = AssistantAgent(
     name="email_assistant",
     llm_config=llm_config,
     system_message=email_assistant_prompt
 )
 
-
-
-salary_slip_assistant = autogen.AssistantAgent(
-    name="salary_slip_assistant",
+verify_tlsn_proof_assistant = AssistantAgent(
+    name="verify_tlsn_proof_assistant",
     llm_config=llm_config,
-    system_message=salary_slip_assistant_prompt
+    system_message=verify_tlsn_proof_prompt
 )
 
-# assistant = autogen.AssistantAgent(
-#     name="laon_assistant",
+# salary_slip_assistant = AssistantAgent(
+#     name="salary_slip_assistant",
 #     llm_config=llm_config,
-#     system_message="checks the bank documents. extract pdf using extract_pdf_skill.",
+#     system_message=salary_slip_assistant_prompt
 # )
 
-user_proxy = autogen.UserProxyAgent(
+user_proxy = UserProxyAgent(
     name="user_proxy",
     human_input_mode="ALWAYS",
     max_consecutive_auto_reply=3,
@@ -72,18 +58,19 @@ user_proxy = autogen.UserProxyAgent(
 )
 
 
+
 user_proxy.register_for_llm(name="verify_email_with_prove_api", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
 user_proxy.register_for_execution(name="verify_email_with_prove_api")(verify_email_with_prove_api)
 
-user_proxy.register_for_llm(name="process_pdf_from_url", description="process pdf from url using extract_pdf_skill")(process_pdf_from_url)
-user_proxy.register_for_execution(name="process_pdf_from_url")(process_pdf_from_url)
+#user_proxy.register_for_llm(name="process_pdf_from_url", description="process pdf from url using extract_pdf_skill")(process_pdf_from_url)
+#user_proxy.register_for_execution(name="process_pdf_from_url")(process_pdf_from_url)
 
 def main():
     # Register the verify_email_with_prove_api function for the email_assistant
     email_assistant.register_function(
         function_map={
             "verify_email_with_prove_api": verify_email_with_prove_api,
-            "process_pdf_from_url": process_pdf_from_url
+            #"process_pdf_from_url": process_pdf_from_url
         }
     )
     chat_results = user_proxy.initiate_chats([
@@ -100,8 +87,8 @@ def main():
             "summary_method": "reflection_with_llm"
         },
         {
-            "recipient": salary_slip_assistant,
-            "message": "guide user to upload a salary slip in pdf format and call process_pdf_from_url function to verify the pdf",
+            "recipient": verify_tlsn_proof_assistant,
+            "message": "guide user to provide the tlsn proof",
             "silent": False,
             "summary_method": "reflection_with_llm"
         }
