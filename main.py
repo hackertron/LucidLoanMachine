@@ -1,8 +1,8 @@
 from autogen import AssistantAgent, UserProxyAgent, config_list_from_json
 from typing import Annotated
 import requests
-from system_prompts import front_desk_assistant_prompt, email_assistant_prompt, verify_tlsn_proof_prompt
-
+from system_prompts import front_desk_assistant_prompt, email_assistant_prompt, verify_tlsn_proof_prompt, salary_slip_assistant_prompt
+from verify_tlsn_proof import verify_tlsn_proof, save_tlsn_proof
 
 
 llm_config = {
@@ -36,11 +36,11 @@ verify_tlsn_proof_assistant = AssistantAgent(
     system_message=verify_tlsn_proof_prompt
 )
 
-# salary_slip_assistant = AssistantAgent(
-#     name="salary_slip_assistant",
-#     llm_config=llm_config,
-#     system_message=salary_slip_assistant_prompt
-# )
+salary_slip_assistant = AssistantAgent(
+    name="salary_slip_assistant",
+    llm_config=llm_config,
+    system_message=salary_slip_assistant_prompt
+)
 
 user_proxy = UserProxyAgent(
     name="user_proxy",
@@ -62,15 +62,15 @@ user_proxy = UserProxyAgent(
 user_proxy.register_for_llm(name="verify_email_with_prove_api", description="verify email's dkim using prove api verify_email_with_prove_api")(verify_email_with_prove_api)
 user_proxy.register_for_execution(name="verify_email_with_prove_api")(verify_email_with_prove_api)
 
-#user_proxy.register_for_llm(name="process_pdf_from_url", description="process pdf from url using extract_pdf_skill")(process_pdf_from_url)
-#user_proxy.register_for_execution(name="process_pdf_from_url")(process_pdf_from_url)
+user_proxy.register_for_llm(name="verify_tlsn_proof", description="verify tlsn json proof")(verify_tlsn_proof)
+user_proxy.register_for_execution(name="verify_tlsn_proof")(verify_tlsn_proof)
 
 def main():
     # Register the verify_email_with_prove_api function for the email_assistant
     email_assistant.register_function(
         function_map={
             "verify_email_with_prove_api": verify_email_with_prove_api,
-            #"process_pdf_from_url": process_pdf_from_url
+            "verify_tlsn_proof": verify_tlsn_proof
         }
     )
     chat_results = user_proxy.initiate_chats([

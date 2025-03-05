@@ -6,7 +6,12 @@ Lucid Loand Machine(LLM) : LLM and zk powered loan app
 2. tlsnNotary
 3. zkemail
 
+## quick demo/try
+1. install requirements.txt
+2. run python main.py
+
 ## architecture
+need to complete
 
 
 ### notes
