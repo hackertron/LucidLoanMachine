@@ -1,3 +1,5 @@
+
+
 # LucidLoanMachine
 Lucid Loand Machine(LLM) : LLM and zk powered loan app
 
@@ -8,7 +10,8 @@ Lucid Loand Machine(LLM) : LLM and zk powered loan app
 
 ## quick demo/try
 1. install requirements.txt
-2. run python main.py
+2. put your OpenAI API key in OAI_CONFIG_LIST.json
+3. run python main.py
 
 ## architecture
 need to complete
